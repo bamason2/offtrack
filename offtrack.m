@@ -8,6 +8,8 @@ classdef offtrack
 %changelog
 %----------------------------------------------
 %24MAR20         BM      Initial specification.
+%24MAR20         BM      Constructor and plotscatter method functionlity
+%                        added. Track and index points hardcoded.
 
 
 
@@ -18,12 +20,31 @@ classdef offtrack
         points              % all points from dataset defined as matrix with rows as
                             % cartesian coordinates [x, y]
         
-        idxpoints           % index points for analysis as matrix with rows as
+        idxpoints =  [      % index points for analysis as matrix with rows as
                             % cartesian coordinates [x, y]
+            0-15, 0; 
+            0-15, 10;
+            0-15, 25;
+            0-15, 40;
+            -15-15, 50;
+            -25-15, 50;
+            -35-15, 50;
+            -40-15, 37.5;
+            -45-15, 25;
+            -28.5-15, 25;
+            -15-15, 20;
+            -5-15, 20;
+            -15-15, 0;
+            -5-15, 25;
+            -26.75-15, 37.5;
+            -30-15, 10
+            ];
         
         numberpoints        % scalar value representing number points to cluster around centre
         
+        track_11 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]';
         
+        engine_label = 'Fox TT';
         
     end
         
@@ -39,17 +60,25 @@ classdef offtrack
     
     methods
         
-        function obj = offtrack(data, idx) %#ok<INUSD>
-            %constructor method that creates object from data file
+        function obj = offtrack(inputdata)  
+            %constructor method that creates object from data file. idx are
+            %the reference index points in the cam space entered as a
+            %matrix with rows as tuples representing cartesian x, y
+            %coordinates. data is the filename with the data.
             
+            % import index points
+            %obj.idxpoints = table(idx(:,1), idx(:,2), 'VariableNames', {'ivo', 'evc'});
             
-            % define index points
-            % obj.idxpoints = idx
 
 
-            % bring in relevant data points
+            % import relevant data points
+            fields = {'VCT_CAM_ACT_EXH', 'VCT_CAM_ACT_INT'};
             
-
+            data = load(inputdata);
+            
+            obj.points = table(data.(fields{1}).signals.values, data.(fields{2}).signals.values, 'VariableNames', {fields{1}, fields{2}});
+        
+        
         end
 
         
@@ -61,15 +90,15 @@ classdef offtrack
             % array or scalar x then the distance is calculated with
             % reference to the index points.
             
-            switch varargin
+            switch nargin
                 
-                case length(varargin) == 2
+                case nargin == 2
                     %case when only one set of points is provided
                     %(comparison is by default with idxpoints).  all points
                     %in x are compared individually with the idxpoints
                     
                     
-                case length(varargin) == 3
+                case nargin == 3
                     %case when two sets of points are provided.  all individual 
                     %points within x are compared with the group of points
                     %represented by y.
@@ -86,10 +115,16 @@ classdef offtrack
 
         
     %plotting -------------------------------------------------------------
-        function plotscatter(obj)  %#ok<MANU>
+        function plotscatter(obj)  
             % scatter plot showing ivo/evc points and camtrack as defined by
             % idx points.  if idxpoints are not defined an error is thrown.
-        
+            
+            plot(obj.points.VCT_CAM_ACT_INT, obj.points.VCT_CAM_ACT_EXH, '+')
+            title('Cam position over cycle');
+            xlabel('int'); ylabel('exh'); hold on;
+            
+            %plot cam track
+            plot(obj.idxpoints(obj.track_11 + 1, 1), obj.idxpoints(obj.track_11 + 1, 2), 'r', 'LineWidth', 2); hold off;
         
         end
         
