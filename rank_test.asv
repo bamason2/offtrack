@@ -1,4 +1,0 @@
-
-sorted_b = sortrows(b,3,'descend');
-i = length(sorted_b);
-rank = [sorted_points i];

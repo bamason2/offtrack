@@ -12,7 +12,9 @@ classdef offtrack
 %                        added. Track and index points hardcoded.
 %27MAR20         RC      distance_idxpoints method, rank method and
 %                        distance_clusters method, c
-
+%27MAR20         JK      point_optimiser - logic to align with the class
+%                        has not yet been added. Will commit this later
+%                        today.
 
     
     
@@ -220,6 +222,61 @@ classdef offtrack
             
         end
         
+                % Point optimisation routine
+        % 
+        % Calculates the size of the region not covered by data, and
+        % hence re-runs point selection to maximise coverage
+        %
+        % Inputs:
+        % - cam_input: vector of cam track points
+        % - r: radius used for point clustering
+        % - N: number of desired test points
+        % - points: data points to select from
+
+        function [New_pt, Area]=point_optimiser(cam_input,r,N,points)
+
+        Area=0; % variable to calculate area enclosed within camtrack
+
+        for i=1:length(cam_input)-1
+            % cam_input should contain x co-ords in column 1, and y
+            % co-ords in column 2. Ref:
+            % https://www.mathopenref.com/coordpolygonarea.html
+            Area=Area+(cam_input(i,1)*cam_input(i+1,2)...
+                -cam_input(i,2)*cam_input(i+1,1));
+        end
+        % Closes the polygon (calcs last point to first) and halves 
+        % area to get final answer. 
+        Area=abs(Area+(cam_input(length(cam_input),1)*cam_input(1,2)...
+                -cam_input(length(cam_input),2)*cam_input(1,1)))/2;
+
+        % Determine how many points are needed for 100% coverage, for a 
+        % specified coverage radius for each point.
+        Max_points_full_coverage=Area/(pi*r^2);
+        coverage_ratio=N*(pi*r^2)/Area;
+
+        if N > Max_points_full_coverage
+        disp('Number of points provides %d coverage ratio, reduce number of points and re-run'...
+            ,coverage_ratio);
+
+        % To maximise coverage ratio, re-run 'Ranking' method on 
+        % index points appended by previous furthest point from all 
+        % data. 
+
+        else
+            disp('Number of points provides %d coverage ratio'...
+            ,coverage_ratio);
+            A=cam_input; % assign cam track to new variable (to be adjusted)
+
+            for i=1:N
+                New_pt(i,:)=Ranking(A,points); % selects point furthest from A
+                A=[A;New_pt(i,:)]; % Adds furthest point to variable from which
+                % distances are calculated - spreads selected points out 
+                % each time
+            end
+
+        end
+        end
+
         
         
     % get and set methods for dependant properties -----------------------
