@@ -195,7 +195,7 @@ classdef offtrack
             clusters = distance_cluster(obj);
             hold on
             for i = 1:20
-                scatter(clusters(:,1,i),clusters(:,2,i))
+                scatter(clusters(:,:,i),)
             end
             title('Cam position over cycle');
             xlabel('int'); ylabel('exh');
