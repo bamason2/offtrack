@@ -10,11 +10,8 @@ classdef offtrack
 %24MAR20         BM      Initial specification.
 %24MAR20         BM      Constructor and plotscatter method functionlity
 %                        added. Track and index points hardcoded.
-%27MAR20         RC      distance_idxpoints method, rank method and
-%                        distance_clusters method, c
-%27MAR20         JK      point_optimiser - logic to align with the class
-%                        has not yet been added. Will commit this later
-%                        today.
+
+
 
     
     
@@ -75,7 +72,7 @@ classdef offtrack
 
 
             % import relevant data points
-            fields = {'VCT_CAM_ACT_INT','VCT_CAM_ACT_EXH',};
+            fields = {'VCT_CAM_ACT_EXH', 'VCT_CAM_ACT_INT'};
             
             data = load(inputdata);
             
@@ -85,7 +82,7 @@ classdef offtrack
         end
 
         
-        function x = distance_idx(obj)
+        function distance(obj, x, y) %#ok<INUSD>
             % calculates distance between point x and y accepts an array as
             % arguments.  if x is a array a distance is calculated for
             % each point in the array relative to the point or group of
@@ -93,86 +90,26 @@ classdef offtrack
             % array or scalar x then the distance is calculated with
             % reference to the index points.
             
-            x = [obj.points.VCT_CAM_ACT_INT obj.points.VCT_CAM_ACT_EXH];
-
-            rx = length(x);
-
-            y = obj.idxpoints;
-
-            ry = length(y);
-
-            z = zeros(size(rx));
-
-            for i = 1:rx
-                dist = 0;
-                for j = 1:ry
-
-                    newdist = 1./(((y(j,1)-x(i,1))^2)+((y(j,2)-x(i,2))^2));
-                    dist = dist + newdist;
-                end
-                z(i) = dist;
-            end
-
-            x = [x z'];
-                    
-               
-
+            switch nargin
                 
-            
-        end
-        
-        function clusters = distance_cluster(obj) 
-            % calculates distance between point x and y accepts an array as
-            % arguments.  if x is a array a distance is calculated for
-            % each point in the array relative to the point or group of
-            % points specfied by y.  if a single argument is entered as a
-            % array or scalar x then the distance is calculated with
-            % reference to the index points.
-            W = rank_t(obj);
-            
-            closest = zeros(20,4,20);
-            A = zeros(20,4);
-
-            for i = 1:20
-                A(i,:) = W(1,:);
-                W(1,:) = [];
-                B = W;
-                Q = A(i,:);
-
-                dist = zeros(length(W),1);
-                for j = 1:length(W)
-
-                newdist = sqrt(((B(j,1)-A(i,1))^2)+((B(j,2)-A(i,2))^2));
-                dist(j,1) = newdist;
-
-                end
-
-                B = [B dist];
-                sorted_B = sortrows(B,5);
-
-                for k = 1:20
-
-                    closest(k,:,i) = sorted_B(k,1:4);
-
-                end
-
-                sorted_B(1:20,:)=[];
-                sorted_B(:,5) = [];
-                W = sorted_B;
-            end
-
-            clusters = closest(:,1:2,:);
+                case nargin == 2
+                    %case when only one set of points is provided
+                    %(comparison is by default with idxpoints).  all points
+                    %in x are compared individually with the idxpoints
                     
+                    
+                case nargin == 3
+                    %case when two sets of points are provided.  all individual 
+                    %points within x are compared with the group of points
+                    %represented by y.
+            end
+            
         end
         
         
-        function rank = rank_t(obj) %#ok<MANU>
+        function rank(obj) %#ok<MANU>
             %function to rank points based on distance
-                     
-            sorted_points = sortrows(distance_idx(obj),3);
-            i = length(sorted_points);
-            r = 1:i;
-            rank = [sorted_points r'];
+            
 
         end
 
@@ -190,23 +127,7 @@ classdef offtrack
             plot(obj.idxpoints(obj.track_11 + 1, 1), obj.idxpoints(obj.track_11 + 1, 2), 'r', 'LineWidth', 2); hold off;
         
         end
-
-        function plotclusters(obj)  %#ok<MANU>
-            % plot showing central point and circle with radius
-            % representing distance of furthest point from centre.
-            clusters = distance_cluster(obj);
-            hold on
-            for i = 1:20
-                scatter(clusters(:,1,i),clusters(:,2,i))
-            end
-            title('Cam position over cycle');
-            xlabel('int'); ylabel('exh');
-            
-            %plot cam track
-            plot(obj.idxpoints(obj.track_11 + 1, 1), obj.idxpoints(obj.track_11 + 1, 2), 'r', 'LineWidth', 2); hold off;
-            hold off
-            
-        end
+        
         
         function plotiris(obj)  %#ok<MANU>
             % plot showing central point and circle with radius
@@ -222,61 +143,6 @@ classdef offtrack
             
         end
         
-                % Point optimisation routine
-        % 
-        % Calculates the size of the region not covered by data, and
-        % hence re-runs point selection to maximise coverage
-        %
-        % Inputs:
-        % - cam_input: vector of cam track points
-        % - r: radius used for point clustering
-        % - N: number of desired test points
-        % - points: data points to select from
-
-        function [New_pt, Area]=point_optimiser(cam_input,r,N,points)
-
-        Area=0; % variable to calculate area enclosed within camtrack
-
-        for i=1:length(cam_input)-1
-            % cam_input should contain x co-ords in column 1, and y
-            % co-ords in column 2. Ref:
-            % https://www.mathopenref.com/coordpolygonarea.html
-            Area=Area+(cam_input(i,1)*cam_input(i+1,2)...
-                -cam_input(i,2)*cam_input(i+1,1));
-        end
-        % Closes the polygon (calcs last point to first) and halves 
-        % area to get final answer. 
-        Area=abs(Area+(cam_input(length(cam_input),1)*cam_input(1,2)...
-                -cam_input(length(cam_input),2)*cam_input(1,1)))/2;
-
-        % Determine how many points are needed for 100% coverage, for a 
-        % specified coverage radius for each point.
-        Max_points_full_coverage=Area/(pi*r^2);
-        coverage_ratio=N*(pi*r^2)/Area;
-
-        if N > Max_points_full_coverage
-        disp('Number of points provides %d coverage ratio, reduce number of points and re-run'...
-            ,coverage_ratio);
-
-        % To maximise coverage ratio, re-run 'Ranking' method on 
-        % index points appended by previous furthest point from all 
-        % data. 
-
-        else
-            disp('Number of points provides %d coverage ratio'...
-            ,coverage_ratio);
-            A=cam_input; % assign cam track to new variable (to be adjusted)
-
-            for i=1:N
-                New_pt(i,:)=Ranking(A,points); % selects point furthest from A
-                A=[A;New_pt(i,:)]; % Adds furthest point to variable from which
-                % distances are calculated - spreads selected points out 
-                % each time
-            end
-
-        end
-        end
-
         
         
     % get and set methods for dependant properties -----------------------
