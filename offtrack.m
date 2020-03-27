@@ -105,7 +105,7 @@ classdef offtrack
                 dist = 0;
                 for j = 1:ry
 
-                    newdist = sqrt(((y(j,1)-x(i,1))^2)+((y(j,2)-x(i,2))^2));
+                    newdist = 1./(((y(j,1)-x(i,1))^2)+((y(j,2)-x(i,2))^2));
                     dist = dist + newdist;
                 end
                 z(i) = dist;
@@ -167,7 +167,7 @@ classdef offtrack
         function rank = rank_t(obj) %#ok<MANU>
             %function to rank points based on distance
                      
-            sorted_points = sortrows(distance_idx(obj),3,'descend');
+            sorted_points = sortrows(distance_idx(obj),3);
             i = length(sorted_points);
             r = 1:i;
             rank = [sorted_points r'];
