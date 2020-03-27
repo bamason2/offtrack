@@ -10,6 +10,8 @@ classdef offtrack
 %24MAR20         BM      Initial specification.
 %24MAR20         BM      Constructor and plotscatter method functionlity
 %                        added. Track and index points hardcoded.
+%27MAR20         BM      Added distance metric. switched column order in
+%                        obj.points
 
 
 
@@ -72,7 +74,7 @@ classdef offtrack
 
 
             % import relevant data points
-            fields = {'VCT_CAM_ACT_EXH', 'VCT_CAM_ACT_INT'};
+            fields = {'VCT_CAM_ACT_INT', 'VCT_CAM_ACT_EXH'};
             
             data = load(inputdata);
             
@@ -82,27 +84,65 @@ classdef offtrack
         end
 
         
-        function distance(obj, x, y) %#ok<INUSD>
-            % calculates distance between point x and y accepts an array as
-            % arguments.  if x is a array a distance is calculated for
-            % each point in the array relative to the point or group of
-            % points specfied by y.  if a single argument is entered as a
-            % array or scalar x then the distance is calculated with
-            % reference to the index points.
-            
-            switch nargin
+        function idx = getfurthest(obj, points)
+           
+            if nargin == 1 %compare with each of the obj.points and return index
                 
-                case nargin == 2
-                    %case when only one set of points is provided
-                    %(comparison is by default with idxpoints).  all points
-                    %in x are compared individually with the idxpoints
+                distances = zeros(height(obj.points), 1);
+                
+                
+                for i = 1 : height(obj.points)
+                    
+                    points = obj.points{:,:};
+                    distances(i) = obj.mindist(points(i,:));
+                   
                     
                     
-                case nargin == 3
-                    %case when two sets of points are provided.  all individual 
-                    %points within x are compared with the group of points
-                    %represented by y.
+                end
+                
             end
+            
+            
+            if nargin == 2 % compare with each of the points specfied and return index
+            
+                for i = 1 : length(points)
+                    
+                   distances(i) = mindist(points(i,:));
+                    
+                    
+                end
+                
+            end
+            
+        
+        
+        idx = find(distances == max(distances));
+        
+        end
+        
+        
+        function dist = mindist(obj, point, refpoints)
+            % calculates min distance from point and either obj.idxpoints or refpoints
+            
+            
+            
+            if nargin == 2  %
+                
+                indexes = obj.track_11+1;
+                dist = sum((point - obj.idxpoints(indexes,:)).^2, 2);
+                
+            end
+            
+            
+            if nargin == 3  % if reference points are specified
+                
+                dist = sum((point - refpoints).^2, 2);
+                
+            end
+            
+            
+            dist = min(dist);  %rank is based on max of min distance i.e. point furthest away from everything
+            
             
         end
         
@@ -111,6 +151,10 @@ classdef offtrack
             %function to rank points based on distance
             
 
+            
+            
+            
+            
         end
 
         
@@ -119,7 +163,7 @@ classdef offtrack
             % scatter plot showing ivo/evc points and camtrack as defined by
             % idx points.  if idxpoints are not defined an error is thrown.
             
-            plot(obj.points.VCT_CAM_ACT_INT, obj.points.VCT_CAM_ACT_EXH, '+')
+            plot(obj.points.VCT_CAM_ACT_INT, obj.points.VCT_CAM_ACT_EXH, '+');
             title('Cam position over cycle');
             xlabel('int'); ylabel('exh'); hold on;
             
@@ -145,6 +189,14 @@ classdef offtrack
         
         
         
+        function optiacov(obj, target) %#ok<INUSD>
+           %method to optmise numberofpoints to cover target percentage
+           %of the area enclosing all of the measured ivo/evc points.
+            
+            
+        end
+        
+        
     % get and set methods for dependant properties -----------------------
         
         function obj = get.centres(obj)
@@ -157,10 +209,13 @@ classdef offtrack
     
     
     
+    
+    
     % static methods (not sure if we need these) --------------------------
     methods(Static)
         
-        
+                
+
         
         
     end
