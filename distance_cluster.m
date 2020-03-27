@@ -1,0 +1,36 @@
+
+
+rr = length(rank);
+
+closest = zeros(20,4,20);
+A = zeros(20,4);
+
+for i = 1:20
+    A(i,:) = rank(1,:);
+    rank(1,:) = [];
+    B = rank;
+    Q = A(i,:);
+
+    dist = zeros(length(rank),1);
+    for j = 1:length(rank)
+
+    newdist = sqrt(((B(j,1)-A(i,1))^2)+((B(j,2)-A(i,2))^2));
+    dist(j,1) = newdist;
+
+    end
+    
+    B = [B dist];
+    sorted_B = sortrows(B,5);
+        
+    for k = 1:20
+        
+        closest(k,:,i) = sorted_B(k,1:4);
+        
+    end
+    
+    sorted_B(1:20,:)=[];
+    sorted_B(:,5) = [];
+    rank = sorted_B;
+end
+
+clusters = closest(:,1:2,:);
