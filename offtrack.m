@@ -42,7 +42,6 @@ classdef offtrack
             -30-15, 10
             ];
         
-        numberpoints        % scalar value representing number points to cluster around centre
         
         track_11 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]';
         
@@ -85,6 +84,9 @@ classdef offtrack
 
         
         function idx = getfurthest(obj, points)
+            %function to evaluate distance between obj.points and
+            %obj.idxpoints. if points argument is supplied then points is
+            %compared with obj.idxpoints.
            
             if nargin == 1 %compare with each of the obj.points and return index
                 
@@ -94,7 +96,8 @@ classdef offtrack
                 for i = 1 : height(obj.points)
                     
                     points = obj.points{:,:};
-                    distances(i) = obj.mindist(points(i,:));
+                    
+                    distances(i) = min(obj.dist(points(i,:)));
                    
                     
                     
@@ -107,7 +110,7 @@ classdef offtrack
             
                 for i = 1 : length(points)
                     
-                   distances(i) = mindist(points(i,:));
+                   distances(i) = min(dist(points(i,:)));
                     
                     
                 end
@@ -121,11 +124,10 @@ classdef offtrack
         end
         
         
-        function dist = mindist(obj, point, refpoints)
+        function dist = dist(obj, point, refpoints)
             % calculates min distance from point and either obj.idxpoints or refpoints
             
-            
-            
+                        
             if nargin == 2  %
                 
                 indexes = obj.track_11+1;
@@ -140,21 +142,47 @@ classdef offtrack
                 
             end
             
+           
+        end
+        
+        
+        function idx = findnearest(obj, point, numberofpoints)
+            % function to select nearest obj.points to specified point. the
+            % number of points returned as an index of obj.points is equal
+            % to numberofpoints.
             
-            dist = min(dist);  %rank is based on max of min distance i.e. point furthest away from everything
+            all_points = obj.points{:,:};
+            
+            distances = obj.dist(point, all_points);
+            sorteddistances = sort(distances, 'ascend');
+            subsetdistances = sorteddistances(1:numberofpoints, :);
+           
+            
+            idx = find(ismember(distances, subsetdistances, 'rows'));
             
             
         end
+        
+        
+        function idx = findfurthest(obj, point, refpoints)
+            % function to return the index in refpoints of the furthest
+            % point in refpoint from point.
+            
+            distances = obj.dist(point, refpoints);
+            maxdistance = max(distances);
+           
+            
+            idx = find(maxdistance == distances);
+            
+            
+        end
+        
         
         
         function rank(obj) %#ok<MANU>
             %function to rank points based on distance
             
 
-            
-            
-            
-            
         end
 
         
@@ -173,13 +201,36 @@ classdef offtrack
         end
         
         
+        function circleplot(~, centrepoint, radiuspoint)
+            %plot a circle at point specified by centrepoint of radius
+            %equal to the distance between the centrepoint and radiuspiont
+            
+            
+            r = sqrt(sum(centrepoint - radiuspoint).^2);
+            
+            theta = 0:pi/50:2*pi;
+            xunit = r * cos(theta) + centrepoint(1);
+            yunit = r * sin(theta) + centrepoint(2);
+            
+            hold on
+            plot(xunit, yunit);
+            hold off
+            
+        end
+        
         function plotiris(obj)  %#ok<MANU>
             % plot showing central point and circle with radius
             % representing distance of furthest point from centre.
             
         end
         
-        
+        function plotpointsonscatter(obj, points)
+          
+            obj.plotscatter(); hold on;
+            plot(points(:,1), points(:,2), '*', 'MarkerSize', 12); hold off
+            
+            
+        end
         
         function plotarea(obj)  %#ok<MANU>
            %plot showing area covered by clusters of points relative to total 
