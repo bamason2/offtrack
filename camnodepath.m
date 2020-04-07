@@ -1,15 +1,12 @@
-classdef camnodepath <handle
-    %UNTITLED11 Summary of this class goes here
-    %   Detailed explanation goes here
+classdef camnodepath <handle & camplot
+    % cam path defined as object with path level methods.
     
     properties
         
     nodes
     
-    
-    
-    
     end
+    
     
     methods
         
@@ -26,56 +23,58 @@ classdef camnodepath <handle
         end
         
         
-        function cluster = trackdist(obj, track)
+               
+        function cluster = kmeans(obj, N)
+            %find kmeans clusters
+            
+            ivo = obj.nodes(:,1);
+            evc = obj.nodes(:,2);
+            
+            [idx, out] = kmeans([ivo, evc], N);
+            
+            cluster(max(idx)).points = [];
+            
+            for i = 1 : max(idx)
+                
+                cluster(i).points = obj.nodes(idx==i,:);
+                cluster(i).centres = out(i, :);
+            end
 
+        end
+        
+       
+        
+        function cluster = farcluster(obj, track, N)
+            
             ivo = obj.nodes(:,1);
             evc = obj.nodes(:,2);
             
             ivo_track = track.nodes(:,1);
             evc_track = track.nodes(:,2);
             
-            m = length(ivo);
-            N=500;
-            
+
             mintrackdist = arrayfun(@(ivo, evc) min(sqrt((ivo - ivo_track).^2 ...  %point distance to track
                 + (evc - evc_track).^2)), ivo, evc, 'UniformOutput', false);
             
             mintrackdist = cell2mat(mintrackdist);
             
-            alldist = arrayfun(@(ivo, evc) sqrt((ivo - obj.nodes(:,1)).^2 + (evc - obj.nodes(:,2)).^2), ivo, evc, 'UniformOutput', false);  %interpoint distances
-            alldist = reshape(cell2mat(alldist), m, m);
+            k = floor(length(mintrackdist) / N);
             
-            i=1;
-            
-            while  N < sum(~isnan(mintrackdist))
-              
-                   [~, idx1] = max(mintrackdist);       %select centriod as point furthest away from any one index
-            
-                  
-                   [~, idx2] = mink(alldist(idx1, :), N + 1);
-                   
-                   cluster(i).points = obj.nodes(idx2,:);
-                   cluster(i).centre = obj.nodes(idx1,:);
-                   i=i+1;
-                   
-                   
-                   mintrackdist(idx2) = NaN;
-                   
-                    
+            cluster(N).points = [];
+           
+            for i = 1 : N
+                
+                [~, idx] = maxk(mintrackdist, k);
+                cluster(i).points = obj.nodes(idx,:);
+                cluster(i).centres(1, 1) = mean(obj.nodes(idx,1));
+                cluster(i).centres(1, 2) = mean(obj.nodes(idx,2));
+                
+                mintrackdist(idx, :) = NaN;
+                
             end
-
             
         end
-        
-        
-        function obj = nearestx(obj, nodeslocation)
-            %returns ranked vector of nearest nodes in list
-            
-            
-            
-        end
-        
-        
+       
     end
 end
 
