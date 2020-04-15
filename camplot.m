@@ -173,14 +173,14 @@ classdef camplot < handle
                     
             end
             
-            WeibDist = fitdist(abs(camerror),'weibull');
+            HnormDist = fitdist(abs(camerror),'HalfNormal');
             NormDist = fitdist(camerror,'normal');
             LogDist = fitdist(camerror,'logistic');
             KerDist = fitdist(camerror,'kernel');
             TDist = fitdist(camerror,'tLocationScale');
             
             x = min(camerror):max(camerror);
-            pdf_Wei = pdf(WeibDist,x);
+            pdf_Hnorm = pdf(HnormDist,x);
             pdf_Norm = pdf(NormDist,x);
             pdf_Log = pdf(LogDist,x);
             pdf_Ker = pdf(KerDist,x);
@@ -189,12 +189,12 @@ classdef camplot < handle
             figure
             histogram(camerror,'Normalization','pdf');
             
-            line(x,pdf_Wei, 'Color', 'r', 'LineStyle', '-', 'LineWidth', 2)
+            line(x,pdf_Hnorm, 'Color', 'r', 'LineStyle', '-', 'LineWidth', 2)
             line(x,pdf_Norm, 'Color','g', 'LineStyle', '--', 'LineWidth', 2)
             line(x,pdf_Log, 'Color', 'b', 'LineStyle', '-.', 'LineWidth', 2)
             line(x,pdf_Ker, 'Color','c', 'LineStyle', ':', 'LineWidth', 2)
             line(x,pdf_T, 'Color','m', 'LineStyle', '-', 'LineWidth', 2)
-            legend('Data','Weibull','Normal','Logistic','Kernel','T','Location','Best')
+            legend('Data','Half Normal','Normal','Logistic','Kernel','T','Location','Best')
             title(plt_title)
             xlabel('error')
             
